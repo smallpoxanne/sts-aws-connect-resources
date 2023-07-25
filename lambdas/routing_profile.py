@@ -110,7 +110,7 @@ def sync_routing_profiles(logger, ts, lowerConnectClient, higherConnectClient, s
                 QueueConfigs=tempConfigList
               )
               logger.info(f"associateQueuesResponse --- {associateQueuesResponse}")
-        except:
+        except Exception as error:
           logger.info(f"***{lrpdName}*** routing profile not created because create request failed --- {type(error).__name__}") 
           rpsNotSynced.append(lrpdName)
     # if rp does exist in higher env, sync queues and update if possible
