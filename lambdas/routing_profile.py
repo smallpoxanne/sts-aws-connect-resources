@@ -110,8 +110,8 @@ def sync_routing_profiles(logger, ts, lowerConnectClient, higherConnectClient, s
                 QueueConfigs=tempConfigList
               )
               logger.info(f"associateQueuesResponse --- {associateQueuesResponse}")
-        except:
-          logger.info(f"***{lrpdName}*** routing profile not created because create request failed") 
+        except Exception as error:
+          logger.info(f"***{lrpdName}*** routing profile not created because create request failed --- {type(error).__name__}") 
           rpsNotSynced.append(lrpdName)
     # if rp does exist in higher env, sync queues and update if possible
     else:
@@ -144,8 +144,8 @@ def sync_routing_profiles(logger, ts, lowerConnectClient, higherConnectClient, s
               MediaConcurrencies=lrpd['MediaConcurrencies']
             )
             logger.info(f"updateRpConcurrencyResponse --- {updateRpConcurrencyResponse}")
-          except:
-            logger.info(f"***{lrpdName}*** concurrency not updated because update request failed")
+          except Exception as error:
+            logger.info(f"***{lrpdName}*** concurrency not updated because update request failed --- {type(error).__name__}")
             # should I break here and move onto next routing profile if one thing doesn't update? 
             # rpsNotSynced.append(lrpdName)
         else:
@@ -169,8 +169,8 @@ def sync_routing_profiles(logger, ts, lowerConnectClient, higherConnectClient, s
               DefaultOutboundQueueId=hrpdDefaultOutboundQueueId
             )
             logger.info(f"updateDefaultOutboundQueueResponse --- {updateDefaultOutboundQueueResponse}")
-          except:
-            logger.info(f"***{lrpdName}*** default outbound queue not updated because update request failed")
+          except Exception as error:
+            logger.info(f"***{lrpdName}*** default outbound queue not updated because update request failed --- {type(error).__name__}")
         else:
           logger.info("not updating default outbound queue")
           
