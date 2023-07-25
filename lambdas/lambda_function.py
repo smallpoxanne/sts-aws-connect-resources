@@ -51,37 +51,37 @@ def lambda_handler(event, context):
   
   logger.info('Boto3 Version: ')
   logger.info(boto3. __version__)
-  lowerConnectClient, higherConnectClient, lowerLambdaClient, higherLambdaClient, lowerLexClient, higherLexClient, lowerDynamoClient, higherDynamoClient = get_clients(logger, ts, destinationEnv)
+  sourceConnectClient, destinationConnectClient, sourceLambdaClient, destinationLambdaClient, sourceLexClient, destinationLexClient, sourceDynamoClient, destinationDynamoClient = get_clients(logger, ts, destinationEnv)
   # Agent Hierarchy takes a long time to run, so we are running it in a separate thread.
   # All others run together in their own thread as they need to be run in order
   with concurrent.futures.ThreadPoolExecutor() as executor:
     result = [
-    # executor.submit(AgentStatus.sync_agent_statuses, logger, ts, lower ConnectClient, higher ConnectClient)
+    # executor.submit(AgentStatus.sync_agent_statuses, logger, ts, source ConnectClient, destination ConnectClient)
     ]
-    # ContactFlowSyncone.compare(logger, ts, lowerConnectClient, higherConnectClient, lower LexClient, higherLexClient)
-    TestFunction.test_function(logger, ts, lowerConnectClient, higherConnectClient, sourceArn, destinationArn)
+    # ContactFlowSyncone.compare(logger, ts, sourceConnectClient, destinationConnectClient, source LexClient, destinationLexClient)
+    TestFunction.test_function(logger, ts, sourceConnectClient, destinationConnectClient, sourceArn, destinationArn)
     
     for future in concurrent.futures.as_completed (result):
       logger.info(future)
   
 def get_clients (logger, ts, destinationEnv):
   if(destinationEnv == 'stg' or destinationEnv == 'prd'):
-    lowerConnectClient = Tydirium('connect', ts, os.environ['AssumeRole'], os.environ ['Region']).client 
-    higherConnectClient = boto3.client('connect')
-    lowerLambdaClient = Tydirium('lambda', ts, os.environ['AssumeRole'], os.environ ['Region']).client 
-    higherLambdaClient = boto3.client('lambda')
-    lowerLexClient = Tydirium('lexv2-models', ts, os.environ['AssumeRole'], os.environ['Region']).client 
-    higherLexClient = boto3.client('lexv2-models')
-    lowerDynamoClient = Tydirium('dynamodb', ts, os.environ['AssumeRole'], os.environ['Region']).client 
-    higherDynamoClient = boto3.client('dynamodb') 
+    sourceConnectClient = Tydirium('connect', ts, os.environ['AssumeRole'], os.environ ['Region']).client 
+    destinationConnectClient = boto3.client('connect')
+    sourceLambdaClient = Tydirium('lambda', ts, os.environ['AssumeRole'], os.environ ['Region']).client 
+    destinationLambdaClient = boto3.client('lambda')
+    sourceLexClient = Tydirium('lexv2-models', ts, os.environ['AssumeRole'], os.environ['Region']).client 
+    destinationLexClient = boto3.client('lexv2-models')
+    sourceDynamoClient = Tydirium('dynamodb', ts, os.environ['AssumeRole'], os.environ['Region']).client 
+    destinationDynamoClient = boto3.client('dynamodb') 
   else:
-    lowerConnectClient = boto3.client('connect') 
-    higherConnectClient = lowerConnectClient 
-    lowerLambdaClient = boto3.client('lambda') 
-    higherLambdaClient = lowerLambdaClient
-    lowerLexClient = boto3.client('lexv2-models') 
-    higherLexClient = lowerLexClient
-    lowerDynamoClient = boto3.client('dynamodb') 
-    higherDynamoClient = lowerDynamoClient
-  return lowerConnectClient, higherConnectClient, lowerLambdaClient, higherLambdaClient, lowerLexClient, higherLexClient, lowerDynamoClient, higherDynamoClient   
-
+    sourceConnectClient = boto3.client('connect') 
+    destinationConnectClient = sourceConnectClient 
+    sourceLambdaClient = boto3.client('lambda') 
+    destinationLambdaClient = sourceLambdaClient
+    sourceLexClient = boto3.client('lexv2-models') 
+    destinationLexClient = sourceLexClient
+    sourceDynamoClient = boto3.client('dynamodb') 
+    destinationDynamoClient = sourceDynamoClient
+  return sourceConnectClient, destinationConnectClient, sourceLambdaClient, destinationLambdaClient, sourceLexClient, destinationLexClient, sourceDynamoClient, destinationDynamoClient   
+  
