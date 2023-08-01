@@ -5,7 +5,7 @@ import math
 # import s3_helper as S3
 import re
 
-def sync_routing_profiles(logger, ts, lowerConnectClient, higherConnectClient, sourceConnectArn, destinationConnectArn):
+def sync_routing_profiles(logger, ts, lowerConnectClient, higherConnectClient, sourceConnectArn, destinationConnectArn, resourceList):
   rpsUpdated=[]
   rpsCreated=[]
   rpsNotSynced=[]
@@ -23,11 +23,12 @@ def sync_routing_profiles(logger, ts, lowerConnectClient, higherConnectClient, s
 
   # make lists of rp descriptions for upper and lower envs
   for profile in lowerRoutingProfileList['RoutingProfileSummaryList']:
-    routingProfileDescription = lowerConnectClient.describe_routing_profile(
-      InstanceId=sourceConnectArn,
-      RoutingProfileId=profile['Id']
-    )
-    lowerRpDescriptions.append(routingProfileDescription['RoutingProfile'])
+    if profile['Id'] in resourceList or resourceList[0]=="all" or resourceList[0]=="All":
+      routingProfileDescription = lowerConnectClient.describe_routing_profile(
+        InstanceId=sourceConnectArn,
+        RoutingProfileId=profile['Id']
+      )
+      lowerRpDescriptions.append(routingProfileDescription['RoutingProfile'])
   for profile in higherRoutingProfileList['RoutingProfileSummaryList']:
     routingProfileDescription = higherConnectClient.describe_routing_profile(
       InstanceId=destinationConnectArn, 
@@ -88,28 +89,26 @@ def sync_routing_profiles(logger, ts, lowerConnectClient, higherConnectClient, s
           iterVal = math.ceil(len(queueConfigTransformDict['queueConfigs'])/10)
           tempConfigList=[]
           createdRpId = ""
+          createResponse = higherConnectClient.create_routing_profile( 
+            InstanceId=destinationConnectArn,
+            Name=lrpdName,
+            Description=lrpdDescription,
+            DefaultOutboundQueueId=hrpdDefaultOutboundQueueId,
+            QueueConfigs=tempConfigList,
+            MediaConcurrencies=lrpdMediaConcurrencies,
+            Tags=lrpdTags
+          )
+          logger.info(f"createResponse --- {createResponse}")
+          createdRpId=createResponse['RoutingProfileId']
+          rpsCreated.append(lrpdName)
           for i in range(0,iterVal):
             tempConfigList=queueConfigTransformDict['queueConfigs'][(i*10):((i*10)+10)]
-            if i==0:
-              createResponse = higherConnectClient.create_routing_profile( 
-                InstanceId=destinationConnectArn,
-                Name=lrpdName,
-                Description=lrpdDescription,
-                DefaultOutboundQueueId=hrpdDefaultOutboundQueueId,
-                QueueConfigs=tempConfigList,
-                MediaConcurrencies=lrpdMediaConcurrencies,
-                Tags=lrpdTags
-              )
-              logger.info(f"createResponse --- {createResponse}")
-              createdRpId=createResponse['RoutingProfileId']
-              rpsCreated.append(lrpdName)
-            else:
-              associateQueuesResponse = higherConnectClient.associate_routing_profile_queues(
-                InstanceId=destinationConnectArn,
-                RoutingProfileId=createdRpId,
-                QueueConfigs=tempConfigList
-              )
-              logger.info(f"associateQueuesResponse --- {associateQueuesResponse}")
+            associateQueuesResponse = higherConnectClient.associate_routing_profile_queues(
+              InstanceId=destinationConnectArn,
+              RoutingProfileId=createdRpId,
+              QueueConfigs=tempConfigList
+            )
+            logger.info(f"associateQueuesResponse --- {associateQueuesResponse}")
         except Exception as error:
           logger.info(f"***{lrpdName}*** routing profile not created because create request failed --- {type(error).__name__}") 
           rpsNotSynced.append(lrpdName)
