@@ -4,7 +4,7 @@ import os
 import operator
 # import s3_helper as S3
 
-def sync_hours_of_operation(logger, ts, sourceConnectClient, destinationConnectClient, sourceArn, destinationArn):
+def sync_hours_of_operation(logger, ts, sourceConnectClient, destinationConnectClient, sourceArn, destinationArn, resourceList):
   sourceId=sourceArn.split('/')[-1]
   destinationId=destinationArn.split('/')[-1]
   sourceHoursList = sourceConnectClient.list_hours_of_operations(
@@ -21,11 +21,12 @@ def sync_hours_of_operation(logger, ts, sourceConnectClient, destinationConnectC
   destinationHoursNames = {}
 
   for hours in sourceHoursList['HoursOfOperationSummaryList']:
-    hoursDescription = sourceConnectClient.describe_hours_of_operation(
-      InstanceId=sourceId,
-      HoursOfOperationId=hours['Id']
-      )
-    sourceHoursDescriptions.append(hoursDescription['HoursOfOperation'])
+    if hours['Id'] in resourceList or resourceList[0]=="all" or resourceList[0]=="All":
+      hoursDescription = sourceConnectClient.describe_hours_of_operation(
+        InstanceId=sourceId,
+        HoursOfOperationId=hours['Id']
+        )
+      sourceHoursDescriptions.append(hoursDescription['HoursOfOperation'])
 
   for hours in destinationHoursList['HoursOfOperationSummaryList']:
     destinationHoursNames[hours['Name']] = hours['Id']
